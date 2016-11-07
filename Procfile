@@ -1,1 +1,1 @@
-web: ./my_next_bus
+web: bustracker

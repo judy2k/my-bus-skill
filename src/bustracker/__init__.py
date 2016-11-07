@@ -9,7 +9,6 @@ import requests
 from kylie import Model, Relation, Attribute
 from flask import Flask, jsonify
 
-
 LOG = logging.getLogger('my_next_bus')
 
 API_KEY = getenv('BUSTRACKER_API_KEY')
@@ -44,10 +43,10 @@ def get_times(stop_number):
     m.update(API_KEY.encode('ascii'))
     m.update(now.encode('ascii'))
     params = {
-            'module': 'json',
-            'key': m.hexdigest(),
-            'function': 'getBusTimes',
-            'stopId': stop_number,
+        'module': 'json',
+        'key': m.hexdigest(),
+        'function': 'getBusTimes',
+        'stopId': stop_number,
     }
     data = requests.get('http://ws.mybustracker.co.uk/', params=params).json()
     return parse_response(data)
@@ -56,10 +55,10 @@ def get_times(stop_number):
 def filter_bus_times(bus_times):
     acceptable_bus_times = {
         bus: [t for t in times if t > 2] for (bus, times) in bus_times.items()
-    }
+        }
     return {
         bus: times for (bus, times) in acceptable_bus_times.items() if times
-    }
+        }
 
 
 def to_human(bus_times):
@@ -85,7 +84,7 @@ def alexa():
     return jsonify({
         "version": "1.0",
         "response": {
-            "outputSpeech": {"type": "PlainText", "text": message },
+            "outputSpeech": {"type": "PlainText", "text": message},
             "card": {
                 "type": "Simple",
                 "title": "Next Bus",
@@ -95,6 +94,10 @@ def alexa():
     })
 
 
-if __name__ == "__main__":
+def main():
     logging.basicConfig(level=logging.DEBUG)
     app.run(debug=True)
+
+
+if __name__ == "__main__":
+    main()
