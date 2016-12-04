@@ -9,6 +9,8 @@ import requests
 from kylie import Model, Relation, Attribute
 from flask import Flask, jsonify
 
+from . import env
+
 LOG = logging.getLogger('my_next_bus')
 
 API_KEY = getenv('BUSTRACKER_API_KEY')
