@@ -1,3 +1,5 @@
-.cache/
-sample_request.txt
 *.egg-info
+.cache/
+.env
+credentials.json
+sample_request.txt

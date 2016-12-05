@@ -13,7 +13,8 @@ setup(
     install_requires=[
         'Flask~=0.11',
         'kylie~=0.3',
-        'click~=6.2',
+        'click~=6.6',
+        'requests~=2.12',
     ],
 
     entry_points={

@@ -1,57 +1,29 @@
 #!/usr/bin/env python
 
-from datetime import datetime
-import hashlib
-from os import getenv
 import logging
 
-import requests
-from kylie import Model, Relation, Attribute
+from bustracker.buses import BusTracker
 from flask import Flask, jsonify
+from flask_ask import Ask, statement
 
 from . import env
 
 LOG = logging.getLogger('my_next_bus')
 
-API_KEY = getenv('BUSTRACKER_API_KEY')
-MY_BUS_STOP = getenv('BUS_STOP_ID')
+
+class MyAppConfiguration(env.Config):
+    api_key = env.EnvVar(env_var_name='BUSTRACKER_API_KEY')
+    bus_stop_id = env.EnvVar()
+    debug = env.BoolVar(default=False)
+
+    def __str__(self):
+        return """
+api_key: {api_key}
+bus_stop_id: {bus_stop_id}
+debug: {debug}""".format(api_key=self.api_key, bus_stop_id=self.bus_stop_id, debug=self.debug)
 
 
-class TimeData(Model):
-    minutes = Attribute()
-
-
-class BusTimes(Model):
-    service_number = Attribute('mnemoService')
-    times = Relation(TimeData, struct_name='timeDatas', sequence=True)
-
-
-class ResponseObject(Model):
-    bus_times = Relation(BusTimes, struct_name='busTimes', sequence=True)
-
-
-def parse_response(data):
-    result = {}
-    ro = ResponseObject.deserialize(data)
-    for bus in ro.bus_times:
-        for time in bus.times:
-            result.setdefault(bus.service_number, []).append(time.minutes)
-    return result
-
-
-def get_times(stop_number):
-    now = datetime.utcnow().strftime('%Y%m%d%H')
-    m = hashlib.md5()
-    m.update(API_KEY.encode('ascii'))
-    m.update(now.encode('ascii'))
-    params = {
-        'module': 'json',
-        'key': m.hexdigest(),
-        'function': 'getBusTimes',
-        'stopId': stop_number,
-    }
-    data = requests.get('http://ws.mybustracker.co.uk/', params=params).json()
-    return parse_response(data)
+config = MyAppConfiguration()
 
 
 def filter_bus_times(bus_times):
@@ -77,28 +49,21 @@ def to_human(bus_times):
 
 
 app = Flask(__name__)
+ask = Ask(app, '/alexa')
+
+bus_tracker = BusTracker(config.api_key)
 
 
-@app.route("/alexa", methods=['POST'])
+@ask.intent('BusTracker')
 def alexa():
-    message = to_human(get_times(MY_BUS_STOP))
+    message = to_human(bus_tracker.get_times(config.bus_stop_id))
     LOG.debug(message)
-    return jsonify({
-        "version": "1.0",
-        "response": {
-            "outputSpeech": {"type": "PlainText", "text": message},
-            "card": {
-                "type": "Simple",
-                "title": "Next Bus",
-                "content": to_human(get_times(MY_BUS_STOP)),
-            }
-        }
-    })
+    return statement(message).simple_card("Bus Times", message)
 
 
 def main():
     logging.basicConfig(level=logging.DEBUG)
-    app.run(debug=True)
+    app.run(debug=config.debug)
 
 
 if __name__ == "__main__":

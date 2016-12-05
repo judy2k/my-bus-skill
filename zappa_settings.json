@@ -1,0 +1,7 @@
+{
+    "dev": {
+        "app_function": "src.bustracker.__init__.app", 
+        "s3_bucket": "zappa-judy2k",
+        "remote_env": "s3://zappa-judy2k/credentials.json"
+    }
+}
